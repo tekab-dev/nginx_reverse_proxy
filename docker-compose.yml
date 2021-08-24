@@ -1,0 +1,140 @@
+version: '2.1'
+
+services:
+    nginx:
+        container_name: nginx
+        image: nginx:1.14.0
+        volumes:
+            - ./nginx/conf.d:/etc/nginx/conf.d
+        ports:
+            - "80:80"
+        restart: always
+        links:
+            - nginx1
+            - nginx2
+        networks:
+            - network1
+            - network2
+
+    nginx1:
+        container_name: nginx1
+        image: nginx:1.14.0
+        volumes:
+            - ./nginx/conf.d.1:/etc/nginx/conf.d
+        restart: always
+        links:
+            - app1
+        networks:
+            - network1
+    app1:
+        build:
+            context: ./php/app1
+        container_name: app1
+        restart: always
+        volumes: 
+            - ./php/app1/src:/var/www/html/
+        links:
+            - redis1
+            - db1
+        networks:
+            - network1
+
+    redis1:
+        container_name: redis1
+        image: redis:6.2.5
+        restart: always
+        networks:
+            - network1
+    db1:
+        container_name: db1
+        image: mysql:5.7
+        volumes:
+            - ./db/db1:/var/lib/mysql
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: admin@123
+            MYSQL_DATABASE: db
+            MYSQL_USER: test
+            MYSQL_PASSWORD: pass@123
+        networks:
+            - network1
+
+    phpmyadmin1:
+        container_name: pma1
+        image: phpmyadmin/phpmyadmin
+        links:
+            - db1
+        environment:
+            PMA_HOST: db1
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+        restart: always
+        ports:
+            - 8081:80
+        networks:
+            - network1
+
+    nginx2:
+        container_name: nginx2
+        image: nginx:1.14.0
+        volumes:
+            - ./nginx/conf.d.2:/etc/nginx/conf.d
+        restart: always
+        links:
+            - app2
+        networks:
+            - network2
+    app2:
+        build:
+            context: ./php/app2
+        container_name: app2
+        restart: always
+        volumes: 
+            - ./php/app2/src:/var/www/html/
+        networks:
+            - network2
+        links:
+            - redis2
+            - db2
+
+    redis2:
+        container_name: redis2
+        image: redis:6.2.5
+        restart: always
+        networks:
+            - network2
+    
+    db2:
+        container_name: db2
+        image: mysql:5.7
+        volumes:
+            - ./db/db2:/var/lib/mysql
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: admin@123
+            MYSQL_DATABASE: db
+            MYSQL_USER: test
+            MYSQL_PASSWORD: pass@123
+        networks:
+            - network2
+    
+    phpmyadmin2:
+        container_name: pma2
+        image: phpmyadmin/phpmyadmin
+        links:
+            - db2
+        environment:
+            PMA_HOST: db2
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+        restart: always
+        ports:
+            - 8082:80
+        networks:
+            - network2
+
+networks:
+    network1:
+        driver: bridge
+    network2:
+        driver: bridge
